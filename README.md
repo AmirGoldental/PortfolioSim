@@ -1,40 +1,17 @@
-# Dash On Heroku
+# Deploying your Dash app online
 
-![page](dash-heroku.gif)
+1. Setup account on Heroku and download Heroku CLI utility
+2. Navigate to this folder
+3. Commit this folder to Git
+4. 'heroku login' and type in your credentials
+5. 'heroku create -n [YOUR-APP-NAME]' where YOUR-APP-NAME refers to the title of your Dash app
+6. 'heroku git:remote -a [YOUR-APP-GIT-URL]' where YOUR-APP-GIT-URL refers to the Git link returned by 5.
+7. 'git push heroku master' will deploy your app to Heroku
+8. 'heroku ps:scale web=1' will create a Dyno and make your app live
 
-## Description
-Web application written in Python using Dash framework and deployed on a Heroku dyno
-(Heroku containers are called Dynos)
+If you want to make changes to your app repeat steps 2. 3. and 7.
 
-## What is it doing?
-It's a single page webapp with two graphs:
-1. CPU (combined) and Virtual Memory consumed on the Heroku Dyno in real time
-2. Bytes sent/recv in real time
+Delete the runtime.txt if you wish to run on Python 2.7.x instead of 3.6.x
 
-## Motivation
-For fun, and to get familiar with Dash and Heroku deployments.
-
-
-## Instructions to clone/deploy this app on Heroku
-
-### 1. Install Heroku CLI
-#### Mac
-    brew install heroku/brew/heroku
-#### Ubuntu 16+
-    sudo snap install --classic heroku
-#### Windows
-get installer from:
-https://devcenter.heroku.com/articles/heroku-cli
-
-### 2. create/login to your heroku account
-    heroku login
-
-### 3. Clone the repo
-    heroku git:clone -a dash-on-heroku
-    cd dash-on-heroku
-
-### 4. Deploy
-    git add .
-    git commit -am "dash-on-heroku clone"
-    git push heroku master
-
+Do NOT rename or delete any other file in this folder (except this README) or else your
+app will not setup properly.
