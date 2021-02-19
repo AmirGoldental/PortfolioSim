@@ -3,6 +3,30 @@ body {
     margin: 0;
     background-color: #111111
 }
-h1, h2, h3, h4, h5, h6 {
-    color: hotpink
+
+h1{
+    text-align: center;
+    color: #7FDBFF;
+}
+
+.controls-line{
+    text-align: left;
+    font-size: 20px;
+    color: white;
+}
+.controls-line input{
+    font-size: inherit;
+    background-color: inherit;
+    width: 33px;
+    border: 0;
+    color: white;
+    font-size: "inherit";
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
+    text-align: center;
+    font-style: italic;
+}
+ 
+.rc-slider{
+    margin-top: 5px;
 }

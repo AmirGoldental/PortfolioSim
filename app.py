@@ -19,109 +19,77 @@ _, AGG_df, _, _ = YahooScraper.getHistoricalStockData("AGG")
 app = dash.Dash(__name__, title="Portfolio Simulator")
 server = app.server
 
-colors = {"background": "#111111", "text": "#7FDBFF"}
+colors = {
+    "background": "#111111",
+    "text": "#7FDBFF",
+}
+
+
+def TextControl(pre_string, default_value, post_string, input_id):
+    return html.Div(
+        className="controls-line",
+        children=[
+            pre_string,
+            dcc.Input(
+                id=input_id,
+                value=default_value,
+            ),
+            post_string,
+        ],
+    )
+
+
+def DateRangeSlider(string, date_span, default_values):
+    return html.Div(
+        className="controls-line",
+        style={"margin-top": 10},
+        children=[
+            string,
+            html.Div(
+                children=[
+                    2006,
+                    dcc.RangeSlider(
+                        id="datetime_RangeSlider",
+                        updatemode="mouseup",  # don't let it update till mouse released
+                        min=2006,
+                        max=2021,
+                        value=[2016, 2020],
+                    ),
+                    2021,
+                ],
+                style={
+                    "display": "grid",
+                    "grid-template-columns": "10% 80% 10%",
+                    "margin-top": 5,
+                },
+            ),
+        ],
+    )
+
+
+controls_div = html.Div(
+    style={
+        "width": "80%",
+        "margin": "auto",
+        "font-size": "20px",
+    },
+    children=[
+        TextControl("US bonds: ", 30, "%", "AGG_percent"),
+        TextControl("S&P 500: ", 40, "%", "IVV_percent"),
+        TextControl("USD: ", 0, "%", "USD_percent"),
+        html.Br(),
+        TextControl("Rebalance every ", 4, " mounths", "rebelance_preiod"),
+        DateRangeSlider("Date range:", [2006, 2021], [2016, 2020]),
+    ],
+)
 
 app.layout = html.Div(
-    style={"backgroundColor": colors["background"]},
+    style={"backgroundColor": colors["background"], "width": "85%", "margin": "auto"},
     children=[
         html.H1(
             children="Simulate your portfolio",
-            style={"textAlign": "center", "color": colors["text"]},
         ),
-        html.Div(
-            children=[
-                "US Bonds: ",
-                dcc.Input(
-                    id="AGG_percent",
-                    value="30",
-                    type="number",
-                    style={
-                        "backgroundColor": colors["background"],
-                        "width": "50px",
-                        "border": 0,
-                        "color": colors["text"],
-                        "font-size": "inherit",
-                        "text-decoration": "underline",
-                    },
-                ),
-                "%",
-            ],
-            style={
-                "margin-left": "10%",
-                "textAlign": "left",
-                "font-size": "20px",
-                "color": colors["text"],
-            },
-        ),
-        html.Div(
-            children=[
-                "S&P 500: ",
-                dcc.Input(
-                    id="IVV_percent",
-                    value="40",
-                    type="number",
-                    style={
-                        "backgroundColor": colors["background"],
-                        "width": "50px",
-                        "border": 0,
-                        "color": colors["text"],
-                        "font-size": "inherit",
-                        "text-decoration": "underline",
-                    },
-                ),
-                "%",
-            ],
-            style={
-                "margin-left": "10%",
-                "textAlign": "left",
-                "font-size": "20px",
-                "color": colors["text"],
-            },
-        ),
-        html.Div(
-            children=[
-                "USD: ",
-                dcc.Input(
-                    id="USD_percent",
-                    value="0",
-                    type="number",
-                    style={
-                        "backgroundColor": colors["background"],
-                        "width": "50px",
-                        "border": 0,
-                        "color": colors["text"],
-                        "font-size": "inherit",
-                        "text-decoration": "underline",
-                    },
-                ),
-                "%",
-            ],
-            style={
-                "margin-left": "10%",
-                "textAlign": "left",
-                "font-size": "20px",
-                "color": colors["text"],
-            },
-        ),
-        html.Div(
-            children=[
-                dcc.RangeSlider(
-                    id="datetime_RangeSlider",
-                    updatemode="mouseup",  # don't let it update till mouse released
-                    min=2006,
-                    max=2021,
-                    value=[2016, 2020],
-                    marks={2006: "2006", 2021: "2021"},
-                ),
-            ],
-            style={
-                "margin-left": "10%",
-                "margin-right": "10%",
-                "textAlign": "left",
-                "font-size": "20px",
-                "color": colors["text"],
-            },
-        ),
+        controls_div,
         dcc.Graph(
             id="Porftfolio_Graph",
             figure={
@@ -203,10 +171,8 @@ def update_USD_percent(IVV_percent, AGG_percent):
 def update_datetime_RangeSlider_marks(values):
     style_dict = {"font-size": 20}
     return {
-        2006: {"label": "2006", "style": style_dict},
         values[0]: {"label": str(values[0]), "style": style_dict},
         values[1]: {"label": str(values[1]), "style": style_dict},
-        2021: {"label": "2021", "style": style_dict},
     }
 
 
