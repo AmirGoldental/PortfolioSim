@@ -3,6 +3,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
 from dash.dependencies import Input, Output
+import datetime
 
 
 # from FinScrapers import Alphavantage
@@ -109,7 +110,8 @@ app.layout = html.Div(
                     updatemode="mouseup",  # don't let it update till mouse released
                     min=2006,
                     max=2021,
-                    value=[2016, 2021],
+                    value=[2016, 2020],
+                    marks={2006: "2006", 2021: "2021"},
                 ),
             ],
             style={
@@ -195,15 +197,41 @@ def update_USD_percent(IVV_percent, AGG_percent):
 
 
 @app.callback(
-    Output("Porftfolio_Graph", "figure"),
-    [Input("IVV_percent", "value"), Input("AGG_percent", "value"), Input("USD_percent", "value")],
+    Output("datetime_RangeSlider", "marks"),
+    Input("datetime_RangeSlider", "value"),
 )
-def update_Porftfolio_Graph(IVV_percent, AGG_percent, USD_percent):
+def update_datetime_RangeSlider_marks(values):
+    style_dict = {"font-size": 20}
+    return {
+        2006: {"label": "2006", "style": style_dict},
+        values[0]: {"label": str(values[0]), "style": style_dict},
+        values[1]: {"label": str(values[1]), "style": style_dict},
+        2021: {"label": "2021", "style": style_dict},
+    }
+
+
+@app.callback(
+    Output("Porftfolio_Graph", "figure"),
+    [
+        Input("IVV_percent", "value"),
+        Input("AGG_percent", "value"),
+        Input("USD_percent", "value"),
+        Input("datetime_RangeSlider", "value"),
+    ],
+)
+def update_Porftfolio_Graph(IVV_percent, AGG_percent, USD_percent, date_range):
+    start_date = date_time_obj = datetime.datetime.strptime(str(date_range[0]), "%Y")
+    end_date = date_time_obj = datetime.datetime.strptime(str(date_range[1]), "%Y")
+    dates = IVV_df.index[(IVV_df.index > start_date) * (IVV_df.index < end_date)]
+    IVV_prices = IVV_df.values[(IVV_df.index > start_date) * (IVV_df.index < end_date)]
+    AGG_prices = AGG_df.values[(AGG_df.index > start_date) * (AGG_df.index < end_date)]
+    if len(AGG_prices) != len(IVV_prices):
+        print("Not the same number of elemets from scraper")
     return {
         "data": [
-            {"x": IVV_df.index, "y": IVV_df.values, "type": "line", "name": "S&P 500"},
-            {"x": AGG_df.index, "y": AGG_df.values, "type": "line", "name": "US Bonds"},
-            {"x": AGG_df.index, "y": AGG_df.values * 0 + 100, "type": "line", "name": "USD"},
+            {"x": dates, "y": IVV_prices, "type": "line", "name": "S&P 500"},
+            {"x": dates, "y": AGG_prices, "type": "line", "name": "US Bonds"},
+            {"x": dates, "y": AGG_prices * 0 + 100, "type": "line", "name": "USD"},
         ],
         "layout": {
             "plot_bgcolor": colors["background"],
