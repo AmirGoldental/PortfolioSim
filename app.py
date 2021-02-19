@@ -13,6 +13,7 @@ import YahooScraper
 # data, _, _, _ = Bizportal.getHistoricalData('1115773')
 data, _, _, _ = YahooScraper.getHistoricalStockData("VOO")
 app = dash.Dash(__name__)
+server = app.server
 
 colors = {"background": "#111111", "text": "#7FDBFF"}
 
