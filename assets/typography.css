@@ -1,7 +1,12 @@
 body {
-    font-family: sans-serif;
+    font-family: "Lucida Console", "Courier New", monospace;
     margin: 0;
     background-color: #111111
+}
+
+.dash-main{
+    width: 90%;
+    margin: auto;
 }
 
 h1{
@@ -9,10 +14,17 @@ h1{
     color: #7FDBFF;
 }
 
-.controls-line{
+.controls{
+    width: 80%;
+    margin: auto;
     text-align: left;
     font-size: 20px;
     color: white;
+}
+.controls-line{
+    white-space: pre;
+    display: grid;
+    grid-template-columns:minmax(120px, max-content) 50px 50px;
 }
 .controls-line input{
     font-size: inherit;

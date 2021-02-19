@@ -41,21 +41,20 @@ def TextControl(pre_string, default_value, post_string, input_id):
 
 def DateRangeSlider(string, date_span, default_values):
     return html.Div(
-        className="controls-line",
         style={"margin-top": 10},
         children=[
             string,
             html.Div(
                 children=[
-                    2006,
+                    date_span[0],
                     dcc.RangeSlider(
                         id="datetime_RangeSlider",
                         updatemode="mouseup",  # don't let it update till mouse released
-                        min=2006,
-                        max=2021,
-                        value=[2016, 2020],
+                        min=date_span[0],
+                        max=date_span[1],
+                        value=default_values,
                     ),
-                    2021,
+                    date_span[1],
                 ],
                 style={
                     "display": "grid",
@@ -68,88 +67,90 @@ def DateRangeSlider(string, date_span, default_values):
 
 
 controls_div = html.Div(
-    style={
-        "width": "80%",
-        "margin": "auto",
-        "font-size": "20px",
-    },
+    className="controls",
     children=[
         TextControl("US bonds: ", 30, "%", "AGG_percent"),
         TextControl("S&P 500: ", 40, "%", "IVV_percent"),
         TextControl("USD: ", 0, "%", "USD_percent"),
         html.Br(),
-        TextControl("Rebalance every ", 4, " mounths", "rebelance_preiod"),
+        TextControl("Rebalance every ", 4, "months", "rebelance_preiod"),
         DateRangeSlider("Date range:", [2006, 2021], [2016, 2020]),
     ],
 )
 
-app.layout = html.Div(
-    style={"backgroundColor": colors["background"], "width": "85%", "margin": "auto"},
-    children=[
-        html.H1(
-            children="Simulate your portfolio",
-        ),
-        controls_div,
-        dcc.Graph(
-            id="Porftfolio_Graph",
-            figure={
-                "data": [],
-                "layout": {
-                    "plot_bgcolor": colors["background"],
-                    "paper_bgcolor": colors["background"],
-                    "font": {"color": colors["text"]},
-                },
+
+def LineGraph(element_id):
+    return dcc.Graph(
+        id=element_id,
+        figure={
+            "data": [],
+            "layout": {
+                "plot_bgcolor": colors["background"],
+                "paper_bgcolor": colors["background"],
+                "font": {"color": colors["text"]},
             },
-        ),
-        html.Div(
-            children=[
-                "Single stock return: ",
-                dcc.Input(
-                    id="ticker",
-                    value="IVV",
-                    type="text",
-                    style={
-                        "backgroundColor": colors["background"],
-                        "width": "50px",
-                        "border": 0,
-                        "color": colors["text"],
-                        "font-size": "inherit",
-                        "text-decoration": "underline",
+        },
+    )
+
+
+def SingleStock():
+    @app.callback(Output("Price_Graph", "figure"), [Input("ticker", "value")])
+    def update_figure(ticker):
+        try:
+            _, df, _, _ = YahooScraper.getHistoricalStockData(ticker)
+        except:
+            df = pd.DataFrame([])
+        return {
+            "data": [{"x": df.index, "y": df.values, "type": "line", "name": ticker}],
+            "layout": {
+                "plot_bgcolor": colors["background"],
+                "paper_bgcolor": colors["background"],
+                "font": {"color": colors["text"]},
+                "title": ticker,
+            },
+        }
+
+    return html.Div(
+        children=[
+            "Single stock return: ",
+            dcc.Input(
+                id="ticker",
+                value="IVV",
+                type="text",
+                style={
+                    "backgroundColor": colors["background"],
+                    "width": "50px",
+                    "border": 0,
+                    "color": colors["text"],
+                    "font-size": "inherit",
+                    "text-decoration": "underline",
+                },
+            ),
+            dcc.Graph(
+                id="Price_Graph",
+                figure={
+                    "data": [],
+                    "layout": {
+                        "plot_bgcolor": colors["background"],
+                        "paper_bgcolor": colors["background"],
+                        "font": {"color": colors["text"]},
                     },
-                ),
-            ],
-            style={"textAlign": "center", "color": colors["text"]},
-        ),
-        dcc.Graph(
-            id="Price_Graph",
-            figure={
-                "data": [],
-                "layout": {
-                    "plot_bgcolor": colors["background"],
-                    "paper_bgcolor": colors["background"],
-                    "font": {"color": colors["text"]},
                 },
-            },
-        ),
+            ),
+        ],
+        style={"textAlign": "center", "color": colors["text"]},
+    )
+
+
+app.layout = html.Div(
+    className="dash-main",
+    children=[
+        html.H1(["Passive Investment", html.Br(), "Portfolio Simuation"]),
+        controls_div,
+        LineGraph("PorftfolioGraph"),
+        SingleStock(),
     ],
 )
-
-
-@app.callback(Output("Price_Graph", "figure"), [Input("ticker", "value")])
-def update_figure(ticker):
-    try:
-        _, df, _, _ = YahooScraper.getHistoricalStockData(ticker)
-    except:
-        df = pd.DataFrame([])
-    return {
-        "data": [{"x": df.index, "y": df.values, "type": "line", "name": ticker}],
-        "layout": {
-            "plot_bgcolor": colors["background"],
-            "paper_bgcolor": colors["background"],
-            "font": {"color": colors["text"]},
-            "title": ticker,
-        },
-    }
 
 
 @app.callback(
@@ -177,7 +178,7 @@ def update_datetime_RangeSlider_marks(values):
 
 
 @app.callback(
-    Output("Porftfolio_Graph", "figure"),
+    Output("PorftfolioGraph", "figure"),
     [
         Input("IVV_percent", "value"),
         Input("AGG_percent", "value"),
@@ -185,7 +186,7 @@ def update_datetime_RangeSlider_marks(values):
         Input("datetime_RangeSlider", "value"),
     ],
 )
-def update_Porftfolio_Graph(IVV_percent, AGG_percent, USD_percent, date_range):
+def update_PorftfolioGraph(IVV_percent, AGG_percent, USD_percent, date_range):
     start_date = date_time_obj = datetime.datetime.strptime(str(date_range[0]), "%Y")
     end_date = date_time_obj = datetime.datetime.strptime(str(date_range[1]), "%Y")
     dates = IVV_df.index[(IVV_df.index > start_date) * (IVV_df.index < end_date)]
