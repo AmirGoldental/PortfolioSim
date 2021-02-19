@@ -5,10 +5,10 @@ import pandas as pd
 from dash.dependencies import Input, Output
 import datetime
 
+from .modules import YahooScraper
 
 # from FinScrapers import Alphavantage
 # from FinScrapers import Bizportal
-import YahooScraper
 from dateutil.relativedelta import relativedelta
 
 
