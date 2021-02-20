@@ -1,20 +1,15 @@
+import numpy as np
+import pandas as pd
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
-import pandas as pd
 from dash.dependencies import Input, Output
+
+import plotly.express as px
 import datetime
 
-from .modules import yahoo_scraper
-from .modules import dash_modules
+from .modules import yahoo_scraper, dash_modules, utils
 
-# from FinScrapers import Alphavantage
-# from FinScrapers import Bizportal
-from dateutil.relativedelta import relativedelta
-
-
-# data, _, _, _ = Alphavantage.getHistoricalData('IVV')
-# data, _, _, _ = Bizportal.getHistoricalData('1115773')
 _, IVV_df, _, _ = yahoo_scraper.getHistoricalStockData("IVV")
 _, AGG_df, _, _ = yahoo_scraper.getHistoricalStockData("AGG")
 app = dash.Dash(__name__, title="Portfolio Simulator")
@@ -44,6 +39,7 @@ app.layout = html.Div(
         html.H1(["Passive Investment", html.Br(), "Portfolio Simuation"]),
         controls_div,
         dash_modules.LineGraph("PorftfolioGraph"),
+        dash_modules.LineGraph("stacked_graph"),
         dash_modules.SingleStock(),
     ],
 )
@@ -88,14 +84,16 @@ def update_PorftfolioGraph(IVV_percent, AGG_percent, USD_percent, date_range):
     dates = IVV_df.index[(IVV_df.index > start_date) * (IVV_df.index < end_date)]
     IVV_prices = IVV_df.values[(IVV_df.index > start_date) * (IVV_df.index < end_date)]
     AGG_prices = AGG_df.values[(AGG_df.index > start_date) * (AGG_df.index < end_date)]
+    IVV_prices = 100 * IVV_prices / IVV_prices[0]
+    AGG_prices = 100 * AGG_prices / AGG_prices[0]
     if len(AGG_prices) != len(IVV_prices):
         print("Not the same number of elemets from scraper")
     return {
         "data": [
-            {"x": dates, "y": 100 * IVV_prices / IVV_prices[0], "type": "line", "name": "S&P 500"},
+            {"x": dates, "y": IVV_prices, "type": "line", "name": "S&P 500"},
             {
                 "x": dates,
-                "y": 100 * AGG_prices / AGG_prices[0],
+                "y": AGG_prices,
                 "type": "line",
                 "name": "US Bonds",
             },
@@ -108,6 +106,71 @@ def update_PorftfolioGraph(IVV_percent, AGG_percent, USD_percent, date_range):
             "title": "Portfolio Simulation",
         },
     }
+
+
+@app.callback(
+    Output("stacked_graph", "figure"),
+    [
+        Input("IVV_percent", "value"),
+        Input("AGG_percent", "value"),
+        Input("USD_percent", "value"),
+        Input("rebelance_preiod", "value"),
+        Input("datetime_RangeSlider", "value"),
+    ],
+)
+def update_stacked_graph(IVV_percent, AGG_percent, USD_percent, rebelance_preiod, date_range):
+    def to_int(string):
+        if string == "":
+            return 0
+        else:
+            return int(string)
+
+    IVV_percent = to_int(IVV_percent)
+    AGG_percent = to_int(AGG_percent)
+    USD_percent = 100 - IVV_percent - AGG_percent
+    rebelance_preiod = to_int(rebelance_preiod)
+    start_date = date_time_obj = datetime.datetime.strptime(str(date_range[0]), "%Y")
+    end_date = date_time_obj = datetime.datetime.strptime(str(date_range[1]), "%Y")
+    dates = IVV_df.index[(IVV_df.index > start_date) * (IVV_df.index < end_date)]
+    IVV_prices = IVV_df.values[(IVV_df.index > start_date) * (IVV_df.index < end_date)]
+    AGG_prices = AGG_df.values[(AGG_df.index > start_date) * (AGG_df.index < end_date)]
+    IVV_prices = 100 * IVV_prices / IVV_prices[0]
+    AGG_prices = 100 * AGG_prices / AGG_prices[0]
+
+    IVV_value = np.array([IVV_percent])
+    AGG_value = np.array([AGG_percent])
+    USD_value = np.array([USD_percent])
+    dates_calculated = np.array(dates[0], dtype="datetime64[D]")
+    total_value = 100
+    while len(dates) > 0:
+        next_idxs = dates < utils.add_months(dates[0], rebelance_preiod)
+        dates_calculated = np.append(
+            dates_calculated, np.array(dates[next_idxs], dtype="datetime64[D]")
+        )
+        IVV_value = np.append(
+            IVV_value,
+            total_value * (IVV_prices[next_idxs] / IVV_prices[0]) * IVV_percent / 100,
+        )
+        AGG_value = np.append(
+            AGG_value,
+            total_value * (AGG_prices[next_idxs] / AGG_prices[0]) * AGG_percent / 100,
+        )
+        USD_value = np.append(
+            USD_value, total_value * (AGG_prices[next_idxs] * 0 + 1) * USD_percent / 100
+        )
+        total_value = USD_value[-1] + AGG_value[-1] + IVV_value[-1]
+
+        dates = dates[~next_idxs]
+        IVV_prices = IVV_prices[~next_idxs]
+        AGG_prices = AGG_prices[~next_idxs]
+    df = pd.DataFrame(
+        {"S&P 500": IVV_value, "US bonds": AGG_value, "USD": USD_value}, index=dates_calculated
+    )
+    fig = px.area(
+        df,
+        template="plotly_dark",
+    )
+    return fig
 
 
 @app.callback(Output("Price_Graph", "figure"), [Input("ticker", "value")])
